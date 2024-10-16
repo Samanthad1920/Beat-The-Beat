@@ -5,7 +5,7 @@ Excursion 1: LEDs
 Acquire LEDs, PI 4 processor, and relevant software tools.
 >> Integrate LEDs and processor.  
 >> Load software tools. 
->> Create a simple program to time the lighting of LEDs and receive timed input from the board.
+>> Create a simple program to time the lightin                 g of LEDs and receive timed input from the board.
 >> Calculate an initial latency from input to score based on user accuracy.
 
 The results of this excursion will be used to define:
@@ -25,12 +25,15 @@ LED_INVERT     = False   # True to invert the signal (when using NPN transistor 
 LED_CHANNEL    = 0       # set to '1' for GPIOs 13, 19, 41, 45 or 53
 
 # Libraries
-#import argparse # UNCOMMENT BEFORE DEMO!
+import argparse # UNCOMMENT BEFORE DEMO!
 import numpy as np
 import threading
 import time
+import re
+#import pynput
 from pynput.keyboard import Key, Listener
-#from rpi_ws281x import * # UNCOMMENT BEFORE DEMO!
+from pynput import keyboard
+from rpi_ws281x import * # UNCOMMENT BEFORE DEMO!
 
 # LED Strip Configuration
 
@@ -40,6 +43,23 @@ currentScore = 0
 keyPress = False
 
 # Function Definitions
+def readBeatMap(): #reading .txt file of array of beats
+    with open('beatMap.txt','r') as file:
+        content = file.read()
+    txtt = re.findall('[0-9]*\.[0-9]*',content)
+    lines = content.strip().strip('[]').replace("\n","").split(' ')
+    while '' in lines:
+        lines.remove('')
+    array = np.array([])
+    for i in txtt:
+        j = float(i)
+        print(j)
+        array = np.append(array,j)
+    
+    print(array)
+    return array
+
+
 def testBeatMap(): #works fine; plan on reading .txt file of array of beats
     """Loads array of values (in seconds) in which hypothetical beats would occur."""
     testBeatTimes = np.array([2, 4, 7, 10, 11]) 
@@ -67,16 +87,16 @@ def colorWipe(strip, color, wait_ms=50): #for LED animation
     for i in range(strip.numPixels()):
         strip.setPixelColor(i, color)
         strip.show()
-        time.sleep(wait_ms/1000.0)
+        time.sleep(wait_ms/10000.0)
 
 
 def beatIndicator(): #needs led flash code here
     """Flashes the LED."""
-    # colorWipe(strip, Color(0, 255, 0)) #UNCOMMENT FOR DEMO
+    colorWipe(strip, Color(0, 255, 0)) #UNCOMMENT FOR DEMO
     print("!!!!!!!!!!!!!!!")
     print("LED BLINK RAH")
     print("!!!!!!!!!!!!!!!")     
-    
+    colorWipe(strip, Color(255, 0, 0)) #UNCOMMENT FOR DEMO   
 
 # =============================================================================
 # // currently unused
@@ -110,7 +130,7 @@ def userInput(key): #works fine ??
 
 def stopUserInput(key): #works fine
     """Stops listening for user inputs when Esc is pressed."""
-    if key == Key.esc:
+    if key == Key.shift_l:
         return False
     
     
@@ -142,14 +162,14 @@ if __name__ == '__main__':
     
     # Initialization of new song session
     resetScore() # sets current score equal to zero
-    beatMap = testBeatMap() # for demo purposes
+    beatMap = readBeatMap() # for demo purposes
     startCountdown(5) # counts down to beginning of session
     songInSession = True
     
     # Initilization of LEDs UNCOMMENT FOR DEMO
 # =============================================================================
-#     strip = Adafruit_NeoPixel(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
-#     strip.begin()
+    strip = Adafruit_NeoPixel(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
+    strip.begin()
 # =============================================================================
     
     while songInSession == True:      
