@@ -40,9 +40,10 @@ if re.search(".*mp3$", pathToImport) != None:
   # normalize, as in amplify until max peak is at max volume
   sound = effects.normalize(sound)
   sound.export("converted.wav", format="wav") # convert to wav
-
+  pathToImport = "converted.wav"
+    
   # get the converted WAV and get sample rate
-  data = wave.open("converted.wav")
+  data = wave.open(pathToImport)
   fs = data.getframerate() # sample rate
   #
 elif re.search(".*wav$", pathToImport) != None:
@@ -63,7 +64,7 @@ signal = np.frombuffer(signal, dtype ="int32") # total time should be correct no
 ### GET TEMPO ####
 
 # we reload the wav file with librosa so the array is in a form librosa can understand
-libData, libfs = librosa.load('test.wav')
+libData, libfs = librosa.load(pathToImport)
 # get the tempo of the song
 BPM, beats = librosa.beat.beat_track(y=libData, sr=libfs)
 
