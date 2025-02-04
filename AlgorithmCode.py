@@ -188,6 +188,8 @@ def piInputCoversion(binArr, samp):
 # call function
 beatMap = piInputCoversion(hitArr, fs)
 
+### BEAT CHARACTERISTIC CALCULATION ###
+
 # calculate time windows
 atwBefore = beatMap.copy()
 atwAfter = beatMap.copy()
