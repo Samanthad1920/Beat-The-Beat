@@ -16,6 +16,7 @@ from playsound import playsound
 from rpi_ws281x import Adafruit_NeoPixel, Color
 from multiprocessing import Lock
 from LEDController import LEDController
+from TimeKeeper import TimeKeeper
 
 # Constants / Configuration ==================================================
 global args_dict
@@ -64,58 +65,6 @@ def timekeepProcess(song_char_table):
             args_dict["index"] = index
         update_event.set()  # Notify threads of the update
         time.sleep(0.01)
-
-# def leadUpLED(strip, color, pad, wait_ms=250):
-#     """New lead up LED indication to alert the user of an incoming beat."""
-#     if pad == 0 or pad == 2: # north and south are first 30 leds in strip
-#         for i in range(4):
-#             strip.setPixelColor(i, color)
-#             strip.setPixelColor(i+5, color)
-#             strip.setPixelColor(i+10, color)
-#             strip.setPixelColor(i+15, color)
-#             strip.setPixelColor(i+20, color)
-#             strip.setPixelColor(i+25, color)
-#             strip.show()
-#             time.sleep(wait_ms/1000.0) # 250 ms
-#     elif pad == 1 or pad == 3: # left and right are second 30 leds in strip
-#         for i in range(4):
-#             strip.setPixelColor((30+i), color)
-#             strip.setPixelColor((30+i)+5, color)
-#             strip.setPixelColor((30+i)+10, color)
-#             strip.setPixelColor((30+i)+15, color)
-#             strip.setPixelColor((30+i)+20, color)
-#             strip.setPixelColor((30+i)+25, color)
-#             strip.show()
-#             time.sleep(wait_ms/1000.0) # 250 ms
-
-# def beatLED(strip, color, pad):
-#     """New on-beat LED indication to show user when the beat occurs."""
-#     if pad == 0 or pad == 2: # north and south are the first 30 leds in strip
-#         for i in range(5):
-#             strip.setPixelColor(i, color)
-#             strip.setPixelColor(i+5, color)
-#             strip.setPixelColor(i+10, color)
-#             strip.setPixelColor(i+15, color)
-#             strip.setPixelColor(i+20, color)
-#             strip.setPixelColor(i+25, color)
-#         strip.show()
-#     elif pad == 1 or pad == 3: # left and right are second 30 leds in strip
-#         for i in range(5):
-#             strip.setPixelColor((30+i), color)
-#             strip.setPixelColor((30+i)+5, color)
-#             strip.setPixelColor((30+i)+10, color)
-#             strip.setPixelColor((30+i)+15, color)
-#             strip.setPixelColor((30+i)+20, color)
-#             strip.setPixelColor((30+i)+25, color)
-#         strip.show()
-
-#     # let beat maintain for half a second
-#     time.sleep(.5)
-
-#     # clear led strip after half a second passed after beat
-#     for i in range(strip.numPixels()):
-#         strip.setPixelColor(i, Color(0, 0, 0))
-#     strip.show()
 
 def play_audio_non_blocking(sound_file):
     """Plays the audio file in a separate thread so the main program continues."""
@@ -206,10 +155,11 @@ def LEDStripProcess(song_char_table, args_queue, strip, pad_numbers):
             index += 1
             args_dict["index"] = index
         time.sleep(0.001)
+
 def stop_processes():
     """Stops all LED processes and turns off LEDs."""
-    print("Stopping all processes...")
     stop_event.set()  # Signal processes to stop
+    print("Stopping all processes...")
 
     # Turn off all LEDs
     for strip in [strip_northright, strip_southleft]:
@@ -247,7 +197,6 @@ def main():
             "session_time": 0.0,
             "index": 0
         })
-        # lock = Lock()
 
     # Create NeoPixel object with appropriate configuration.
     strip_northright.begin()
@@ -270,8 +219,11 @@ def main():
     # Store in local table for visual indication module and user interaction module to reference
     song_char_table = storeCharTable(beat_times, beat_leadup, atw_start, atw_end, ptw_start, ptw_end)
 
-    # Process creation
-    timekeep_process = multiprocessing.Process(target=timekeepProcess, args=(song_char_table, args_dict, lock), daemon=True)
+    # Process creation for the TimeKeeper
+    timekeeper = TimeKeeper(song_char_table, args_dict, lock, update_event, stop_event)
+    timekeep_process = multiprocessing.Process(target=timekeeper.run, daemon=True)
+    
+    # Process creation for LED Strips
     northright_process = multiprocessing.Process(target=LEDStripProcess, args=(song_char_table, args_queue, strip_northright, [0, 1]), daemon=True)
     southleft_process = multiprocessing.Process(target=LEDStripProcess, args=(song_char_table, args_queue, strip_southleft, [2, 3]), daemon=True)
 
@@ -296,7 +248,6 @@ def main():
             song_in_session = False  # End the session
 
         # Monitor user input or any other events (emergency stop)
-        # Can check the GPIO or any other button state here
         if GPIO.input(ESTOP_PIN) == GPIO.LOW:  # Emergency stop button pressed
             print("Emergency stop triggered. Exiting...")
             stop_processes()  # Call stop function
