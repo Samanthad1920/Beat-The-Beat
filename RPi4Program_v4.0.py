@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 Beat the Beat! Main Program
-Version 4.0 (WILL TWO THREADS BE ENOUGH :fire_emoji: ?!?!?!)
+Version 4.1 E-Stop attempted! 
 
-@author: Sasha Folloso
+@author: Sasha Folloso and Samantha DuBois
 """
 # =============================================================================
 #       ___           ___           ___           ___     
@@ -47,6 +47,7 @@ import pandas as pd
 import random
 import time
 import threading
+import RPi.GPIO as GPIO
 from playsound import playsound
 from rpi_ws281x import *
 
@@ -55,8 +56,6 @@ from rpi_ws281x import *
 LED_COUNT       = 30      # number of LED pixels per strip
 NR_LED_PIN      = 21 # GPIO Pin 18
 SL_LED_PIN      = 18 # GPIO Pin 21
-#DOWN_PAD_PIN    = 10 # GPIO Pin 10
-#LEFT_PAD_PIN    = 12 # GPIO Pin 12
 LED_FREQ_HZ    = 800000  # LED signal frequency in hertz (usually 800khz)
 LED_DMA        = 10      # DMA channel to use for generating a signal (try 10)
 LED_BRIGHTNESS = 65      # Set to 0 for darkest and 255 for brightest
@@ -69,16 +68,15 @@ args_dict = {
     "index": 0
 }
 
-## Threads
-#strip_north = Adafruit_NeoPixel(LED_COUNT, UP_PAD_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
-#strip_right = Adafruit_NeoPixel(LED_COUNT, RIGHT_PAD_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
-#strip_south = Adafruit_NeoPixel(LED_COUNT, DOWN_PAD_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
-#strip_left = Adafruit_NeoPixel(LED_COUNT, LEFT_PAD_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
+# Define the GPIO pin connected to the e-stop button
+ESTOP_PIN = 7 # GPIO4 - Pin 7 - default Pull-Up  
 
+## Threads
 strip_northright = Adafruit_NeoPixel(LED_COUNT, NR_LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
 strip_southleft = Adafruit_NeoPixel(LED_COUNT, SL_LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
 
 update_event = threading.Event()
+stop_event = threading.Event()
 
 # Functions ==================================================================
 def timekeepThread(song_char_table):
@@ -86,7 +84,7 @@ def timekeepThread(song_char_table):
     global args_dict
     start_time = time.time()
     index = args_dict["index"]
-    while(True):
+    while(not stop_event.is_set()):
         current_time = time.time()
         session_time = current_time - start_time
         args_dict["session_time"] = session_time
@@ -101,7 +99,7 @@ def timekeepThread(song_char_table):
 def NRStripThread(song_char_table):
     """This thread controls the north (0) and right (1) pad LEDs"""
     global args_dict
-    while True:
+    while not stop_event.is_set():
         update_event.wait() #waits for flag set by timekeep thread
         
         index = args_dict["index"]
@@ -136,7 +134,7 @@ def NRStripThread(song_char_table):
 def SLStripThread(song_char_table):
     """This thread controls the south (2) and left (3) pad LEDs"""
     global args_dict
-    while True:
+    while not stop_event.is_set():
         update_event.wait() #waits for flag set by timekeep thread
         
         index = args_dict["index"]
@@ -167,8 +165,7 @@ def SLStripThread(song_char_table):
             index = index + 1
             args_dict["index"] = index
         
-        time.sleep(.001)
-    
+        time.sleep(.001)    
         
 def leadUpLED(strip, color, pad, wait_ms=250):
     """New lead up LED indication to alert the user of an incoming beat."""
@@ -221,41 +218,6 @@ def beatLED(strip, color, pad):
     for i in range(strip.numPixels()):
         strip.setPixelColor(i, Color(0, 0, 0))    
     strip.show()        
-        
-def leftStripThread(song_char_table):
-    """Thread that controls south LED strip."""
-    global args_dict
-    while True:
-        update_event.wait()
-
-        index = args_dict["index"]
-        session_time = args_dict["session_time"]
-
-        if index >= len(song_char_table):
-            print("Reached end of song characteristic table.")
-            break
-        
-        beat_time = song_char_table.loc[index, 'Beat Time (s)']
-        beat_leadup = song_char_table.loc[index, 'Lead Up Start (s)']
-        beat_pad = song_char_table.loc[index, 'Pad #']
-        led_activated = song_char_table.loc[index, 'LED Activated']
-        
-        if session_time >= beat_time and beat_pad != 3:
-            index = index + 1
-            args_dict["index"] = index
-#             update_event.set() 
-#             update_event.clear()
-        
-        elif session_time >= beat_leadup and beat_pad == 3 and not led_activated:
-            leadUpLED(strip_left, Color(255,255,0))
-            beatLED(strip_left, Color(0,255,0))
-            song_char_table.at[index, 'LED Activated'] = True
-            index = index + 1
-            args_dict["index"] = index
-#             update_event.set() 
-#             update_event.clear()
- 
-        time.sleep(.001)
 
 def play_audio_non_blocking(sound_file):
     """Plays the audio file in a separate thread so the main program continues."""
@@ -304,12 +266,34 @@ def storeCharTable(beat_times:list, beat_leadup:list, atw_start:list, atw_end:li
     print(song_char_table)
     return song_char_table
 
+def stop_threads():
+    """Stops all LED threads and turns off LEDs."""
+    print("Stopping all LED threads...")
+    stop_event.set()  # Signal threads to stop
+
+    # Turn off all LEDs
+    for strip in [strip_northright, strip_southleft]:
+        for i in range(strip.numPixels()):
+            strip.setPixelColor(i, Color(0, 0, 0))  # Set to off
+        strip.show()
+    
+    print("All LEDs turned off.")
+
+def button_callback(channel):
+    print(f"Button pressed on pin {channel}!")
+    if channel == ESTOP_PIN:
+        print("Emergency stop triggered! Stopping all threads.")
+        stop_threads()
+
 def main():
     """Obligatory main function!"""
 
+    # GPIO Pin Setup
+    GPIO.setmode(GPIO.BOARD)
+    GPIO.setup(ESTOP_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    GPIO.add_event_detect(ESTOP_PIN, GPIO.FALLING, callback=button_callback, bouncetime=300) # ESTOP Flag
+
     # Create NeoPixel object with appropriate configuration.
-    #strip_north = Adafruit_NeoPixel(LED_COUNT, UP_PAD_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
-    #strip_left = Adafruit_NeoPixel(LED_COUNT, LEFT_PAD_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
     # Intialize the library (must be called once before other functions).
     strip_northright.begin()
     strip_southleft.begin()
@@ -333,10 +317,6 @@ def main():
     
     # Thread creation
     timekeep_thread = threading.Thread(target = timekeepThread, args = (song_char_table,), daemon = True)
-#     north_thread = threading.Thread(target = northStripThread, args = (song_char_table,), daemon = False)
-#     south_thread = threading.Thread(target = southStripThread, args = (song_char_table,), daemon = True)
-#     left_thread = threading.Thread(target = leftStripThread, args = (song_char_table,), daemon = True)
-#     right_thread = threading.Thread(target = rightStripThread, args = (song_char_table,), daemon = False)
     northright_thread = threading.Thread(target = NRStripThread, args = (song_char_table,), daemon = False)
     southleft_thread = threading.Thread(target = SLStripThread, args = (song_char_table,), daemon = False)
     
@@ -349,8 +329,6 @@ def main():
     while(song_in_session):
         if not thread_started:
             northright_thread.start()
-            #south_thread.start()
-            #left_thread.start()
             southleft_thread.start()
             timekeep_thread.start()
             thread_started = True
@@ -358,4 +336,3 @@ def main():
 # Main Program
 if __name__ == '__main__':
     main()
-
