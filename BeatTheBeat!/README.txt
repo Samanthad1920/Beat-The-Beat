@@ -1,11 +1,11 @@
 Welcome to the reorganized files of Beat the Beat! You should find the following files in this folder:
 
 main.py
-song_processing_module.py
-visual_module.py
-sound_module.py
-ui_module.py
-estop_module.py
+module_sp.py
+module_visual.py
+module_sound.py
+module_ui.py
+module_estop.py
 
 atwBefore.txt
 atwAfter.txt
