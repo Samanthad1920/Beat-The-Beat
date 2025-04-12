@@ -1,0 +1,81 @@
+ 1# SPDX-FileCopyrightText: 2021 ladyada for Adafruit Industries
+ 2# SPDX-License-Identifier: MIT
+ 3
+ 4import time
+ 5import board
+ 6import neopixel
+ 7
+ 8
+ 9# On CircuitPlayground Express, and boards with built in status NeoPixel -> board.NEOPIXEL
+10# Otherwise choose an open pin connected to the Data In of the NeoPixel strip, i.e. board.D1
+11pixel_pin = board.NEOPIXEL
+12
+13# On a Raspberry pi, use this instead, not all pins are supported
+14# pixel_pin = board.D18
+15
+16# The number of NeoPixels
+17num_pixels = 10
+18
+19# The order of the pixel colors - RGB or GRB. Some NeoPixels have red and green reversed!
+20# For RGBW NeoPixels, simply change the ORDER to RGBW or GRBW.
+21ORDER = neopixel.GRB
+22
+23pixels = neopixel.NeoPixel(
+24    pixel_pin, num_pixels, brightness=0.2, auto_write=False, pixel_order=ORDER
+25)
+26
+27
+28def wheel(pos):
+29    # Input a value 0 to 255 to get a color value.
+30    # The colours are a transition r - g - b - back to r.
+31    if pos < 0 or pos > 255:
+32        r = g = b = 0
+33    elif pos < 85:
+34        r = int(pos * 3)
+35        g = int(255 - pos * 3)
+36        b = 0
+37    elif pos < 170:
+38        pos -= 85
+39        r = int(255 - pos * 3)
+40        g = 0
+41        b = int(pos * 3)
+42    else:
+43        pos -= 170
+44        r = 0
+45        g = int(pos * 3)
+46        b = int(255 - pos * 3)
+47    return (r, g, b) if ORDER in (neopixel.RGB, neopixel.GRB) else (r, g, b, 0)
+48
+49
+50def rainbow_cycle(wait):
+51    for j in range(255):
+52        for i in range(num_pixels):
+53            pixel_index = (i * 256 // num_pixels) + j
+54            pixels[i] = wheel(pixel_index & 255)
+55        pixels.show()
+56        time.sleep(wait)
+57
+58
+59while True:
+60    # Comment this line out if you have RGBW/GRBW NeoPixels
+61    pixels.fill((255, 0, 0))
+62    # Uncomment this line if you have RGBW/GRBW NeoPixels
+63    # pixels.fill((255, 0, 0, 0))
+64    pixels.show()
+65    time.sleep(1)
+66
+67    # Comment this line out if you have RGBW/GRBW NeoPixels
+68    pixels.fill((0, 255, 0))
+69    # Uncomment this line if you have RGBW/GRBW NeoPixels
+70    # pixels.fill((0, 255, 0, 0))
+71    pixels.show()
+72    time.sleep(1)
+73
+74    # Comment this line out if you have RGBW/GRBW NeoPixels
+75    pixels.fill((0, 0, 255))
+76    # Uncomment this line if you have RGBW/GRBW NeoPixels
+77    # pixels.fill((0, 0, 255, 0))
+78    pixels.show()
+79    time.sleep(1)
+80
+81    rainbow_cycle(0.001)  # rainbow cycle with 1ms delay per step
