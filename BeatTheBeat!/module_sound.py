@@ -25,7 +25,7 @@ def stopSong():
     mixer.music.stop()
 
 def main():
-    loadSong("btb_test_audio.mp3")
+    loadSong("test_audio.mp3")
     playSong()
     input("Press enter to stop music playback!")
     stopSong()

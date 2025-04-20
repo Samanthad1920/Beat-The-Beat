@@ -17,8 +17,8 @@ DEFAULT_PT_VALUE = 1000
 PRECISE_PT_VALUE = 2 * DEFAULT_PT_VALUE
 
 N_SWITCH_PIN = 5    # GPIO 5
-R_SWITCH_PIN = 6    # GPIO 6
-S_SWITCH_PIN = 26   # GPIO 26
+R_SWITCH_PIN = 26    # GPIO 6
+S_SWITCH_PIN = 6   # GPIO 26
 L_SWITCH_PIN = 16   # GPIO 16
 
 # Functions
@@ -45,20 +45,21 @@ def calculateScore(current_score:int, hit_time:float, atw_start:float, atw_end:f
 
 def main():
     """Testing main function."""
+    configSwitch()
     while(True):
         n_switch_state = GPIO.input(N_SWITCH_PIN)
         r_switch_state = GPIO.input(R_SWITCH_PIN)
         s_switch_state = GPIO.input(S_SWITCH_PIN)
         l_switch_state = GPIO.input(L_SWITCH_PIN)
         if n_switch_state == GPIO.HIGH:
-            print("User hit the north pad!")
+            print("User hit the left pad!")
         elif r_switch_state == GPIO.HIGH:
-            print("User hit the right pad!")
+            print("User hit the north pad!")
         elif s_switch_state == GPIO.HIGH:
             print("User hit the south pad!")
         elif l_switch_state == GPIO.HIGH:
-            print("User hit the south pad!")
-        time.sleep(0.5)
+            print("User hit the right pad!")
+        time.sleep(0.2)
     
 # Main Program
 if __name__ == '__main__':

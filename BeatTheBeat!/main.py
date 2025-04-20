@@ -40,13 +40,15 @@ version: 1.01
       
 ==============================================================================
 """
+# GENERAL CONFIGURATION ======================================================
+SONG_FILE_NAME = "" # change this
+
 # Libraries and Modules ======================================================
 import numpy as np
 import pandas as pd
 import random
 import time
 import threading
-from playsound import playsound
 from rpi_ws281x import *
 import RPi.GPIO as GPIO
 
@@ -57,7 +59,7 @@ from module_sound import loadSong, playSong, stopSong
 # Visual Module imports
 from module_visual import LED_COUNT, NR_LED_PIN, SL_LED_PIN, LED_FREQ_HZ, LED_DMA, LED_BRIGHTNESS, LED_INVERT, LED_CHANNEL
 from module_visual import leadUpLED, beatLED
-from module_visual import lcd, i2cSafeExit, setupScore, setupScoreLCD, updateScoreLCD
+from module_visual import lcd, i2cSafeExit, setupScoreLCD, setupScoreLCD, updateScoreLCD
 
 # User Interaction imports
 from module_ui import DEFAULT_PT_VALUE, PRECISE_PT_VALUE, N_SWITCH_PIN, R_SWITCH_PIN, S_SWITCH_PIN, L_SWITCH_PIN
@@ -166,6 +168,8 @@ def SLStripThread(song_char_table):
         time.sleep(.001)
         
 def main():
+    global args_dict
+    
     # Begin Threads
     strip_northright.begin()
     strip_southleft.begin()
@@ -201,24 +205,49 @@ def main():
     start_time = time.time()
     
     # Load and begin song
-    loadSong("") # put song file name in here
-    playSong()
+    #loadSong("") # put song file name in here
+    #playSong()
+    
+    configSwitch()
+    
+    northright_thread.start()
+    southleft_thread.start()
+    timekeep_thread.start()
+    
+    lcd.text("Current Score:",1)
+    lcd.text("0", 2)
     
     while(song_in_session):
-        if not thread_started:
-            northright_thread.start()
-            southleft_thread.start()
-            timekeep_thread.start()
-            thread_started = True  
-
+        index = args_dict["index"]
+        
         n_switch_state = GPIO.input(N_SWITCH_PIN)
         r_switch_state = GPIO.input(R_SWITCH_PIN)
         s_switch_state = GPIO.input(S_SWITCH_PIN)
         l_switch_state = GPIO.input(L_SWITCH_PIN)
         
-        if current_score != prev_score:
-            updateScoreLCD(current_score)
-            prev_score = current_score
+        
+        
+        if n_switch_state == GPIO.HIGH: # clean this up later to be all in one if statement
+            hit_time = time.time() - start_time
+            print(f"North pad hit at {hit_time:.2f}")
+            current_score = calculateScore(current_score, hit_time, song_char_table.loc[index, 'ATW Start (s)'], song_char_table.loc[index, 'ATW End (s)'], song_char_table.loc[index, 'PTW Start (s)'], song_char_table.loc[index, 'PTW End (s)'])
+            #print("User hit the north pad!")
+        elif r_switch_state == GPIO.HIGH:
+            print("User hit the right pad!")
+        elif s_switch_state == GPIO.HIGH:
+            hit_time = time.time() - start_time
+            print(f"South pad hit at {hit_time:.2f}")
+            current_score = calculateScore(current_score, hit_time, song_char_table.loc[index, 'ATW Start (s)'], song_char_table.loc[index, 'ATW End (s)'], song_char_table.loc[index, 'PTW Start (s)'], song_char_table.loc[index, 'PTW End (s)'])
+#             print("User hit the south pad!")
+        elif l_switch_state == GPIO.HIGH:
+            print("User hit the south pad!")
+        
+#         if current_score != prev_score:
+#             print(current_score)
+#             updateScoreLCD(current_score)
+#             prev_score = current_score
+            
+        lcd.text(str(current_score),2)
 
 if __name__ == '__main__':
-    pass
+    main()
