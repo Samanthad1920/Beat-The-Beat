@@ -34,17 +34,22 @@ if __name__ == '__main__':
     if option == 1: # Test 1: Legibility Test
         for i in range(50):
             print(f'Current word: {word_bank[i]}')
-            lcd.text('Word {i} of 50:',1)
+            lcd.text(f'Word {i+1} of 50:',1)
             lcd.text(str(word_bank[i]),2)
             input() # Press enter to proceed onto the next word.
             
     elif option == 2: # Test 2: Refresh Rate Test
-        lcd.text('Refresh Rate Test',1)
-        for i in range(100):
+        lcd.text('RefreshRate Test',1)
+        for i in range(40):
             num = (1 + i) * 11111
             print(num)
             lcd.text(str(num),2)
-            time.sleep(.01)
+            time.sleep(.08)
     
     elif option == 3: # Exit Program
         exit()
+
+            
+    
+
+

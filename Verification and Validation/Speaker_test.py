@@ -7,7 +7,7 @@ Speaker Component
 # Libraries
 from pygame import mixer
 
-SONG_FILE = "test.mp3"
+SONG_FILE = "test_audio.mp3"
 
 # Functions
 def playSong():
@@ -24,4 +24,6 @@ if __name__ == '__main__':
     mixer.music.load(SONG_FILE)
     playSong()
     input("Press enter to stop music playback!")
-    stopSong() 
+    stopSong()    
+
+
