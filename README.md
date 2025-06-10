@@ -15,9 +15,9 @@
 ---
 
 ## 🧠 Project Structure
-
+<pre lang="markdown"><code>
 Beat-The-Beat/
-├── BeatTheBeat!/ # Subfolder for the final main program
+├── BeatTheBeat!/ # Final program folder
 │ ├── README.txt
 | ├── main.py # Main orchestrator
 │ ├── text_audio.mp3
@@ -49,7 +49,7 @@ Beat-The-Beat/
 | └── test_audio.mp3
 |
 └── .gitignore 
-
+</code></pre>
 ---
 
 ## 🛠️ Installation
