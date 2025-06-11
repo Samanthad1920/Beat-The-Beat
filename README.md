@@ -1,20 +1,20 @@
-# 🥁 Beat-The-Beat
+# Beat-The-Beat
 
 **Beat-The-Beat** is a Python-based audio analysis and beatmap generation tool. It processes audio input to detect beats, generate timing data, and provide synchronized visual or interactive output. This project is useful for rhythm game development, music analysis, or creative musical experiments.
 
 ---
 
-## 📦 Features
+## Features
 
-- ⏱️ Beat detection using signal processing libraries (`librosa`, `scipy`)
-- 🎧 Audio file handling and playback via `pydub`
-- 📊 Modular architecture for visualization, UI interaction, and audio control
-- 📁 Support for loading/saving beatmap data to text files
-- ⚙️ Emergency stop module (`module_estop.py`) for runtime safety and control
+- Beat detection using signal processing libraries (`librosa`, `scipy`)
+- Audio file handling and playback via `pydub`
+- Modular architecture for visualization, UI interaction, and audio control
+- Support for loading/saving beatmap data to text files
+- Emergency stop module (`module_estop.py`) for runtime safety and control
 
 ---
 
-## 🧠 Project Structure
+## Project Structure
 <pre lang="markdown"><code>
 Beat-The-Beat/
 ├── BeatTheBeat!/ # Final program folder
@@ -50,9 +50,10 @@ Beat-The-Beat/
 |
 └── .gitignore 
 </code></pre>
+
 ---
 
-## 🛠️ Installation
+## Installation
 
 ### Prerequisites
 
@@ -75,11 +76,13 @@ brew install ffmpeg
 ```bash
 sudo apt install ffmpeg
 ```
+
 ---
-## 🚀 Usage
+
+## Usage
 To run the full system:
 ```bash
-cd BeatTheBeat!
+cd 'BeatTheBeat!'
 python main.py
 ```
 To run just the beat detection logic:
@@ -91,7 +94,7 @@ Ensure your audio file is correctly specified in the code (typically via a hardc
 
 ---
 
-## 📄 Output Files
+## Output Files
 The following files are generated inside the `BeatTheBeat!/` folder:
 
 |File	| Description |
@@ -105,7 +108,7 @@ The following files are generated inside the `BeatTheBeat!/` folder:
 
 ---
 
-## 👥 Authors
+## Authors
 
 - [follosoraptor](https://github.com/follosoraptor)
 - [Samanthad1920](https://github.com/Samanthad1920)
